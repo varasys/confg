@@ -29,6 +29,8 @@ The script will automatically create the local bare git repos as needed. See the
 
 ## Examples
 
+To use this with github for 'confg' and 'syconfg' files (not 'seconfg' since it contains sensitive information) first create empty repos on github for each. I name mine 'dotfiles-user' and 'dotfiles-system'.
+
 After installation (see below) you can do things like in the examples below. All of these examples show the `confg` command, but they also work with the `seconfg` and `syconfg` variants.
 
 1. add your .vimrc file

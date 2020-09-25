@@ -33,7 +33,7 @@ installScripts() { # install this script by copying it from wherever it is being
   SYCONFG_FILE="${SYCONFG_FILE:-"${ROOT_DIR}/sbin/syconfg"}" # script for system config files
   ACONFG_FILE="${ACONFG_FILE:-"${ROOT_DIR}/bin/aconfg"}" # script for all user, sucure and system
 
-  if [ ! -f "${CONFG_FILE}" ]; then
+  if [ "$1" = "force" ] || [ ! -f "${CONFG_FILE}" ]; then
     printf "installing main script to \"%s\"\n" "${CONFG_FILE}"
     cp -L "$0" "${CONFG_FILE}"
   else
@@ -41,21 +41,21 @@ installScripts() { # install this script by copying it from wherever it is being
   fi
   setPerms "${CONFG_FILE}" 755
 
-  if [ ! -e "${SECONFG_FILE}" ]; then
+  if [ "$1" = "force" ] || [ ! -e "${SECONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${SECONFG_FILE}" "${CONFG_FILE}"
     ln -s "${CONFG_FILE}" "${SECONFG_FILE}"
   else
     printf "file \"%s\" already exists\n" "${SECONFG_FILE}"
   fi
 
-  if [ ! -e "${SYCONFG_FILE}" ]; then
+  if [ "$1" = "force" ] || [ ! -e "${SYCONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${SYCONFG_FILE}" "${CONFG_FILE}"
     ln -s "${CONFG_FILE}" "${SYCONFG_FILE}"
   else
     printf "file \"%s\" already exists\n" "${SYCONFG_FILE}"
   fi
 
-  if [ ! -e "${ACONFG_FILE}" ]; then
+  if [ "$1" = "force" ] || [ ! -e "${ACONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${ACONFG_FILE}" "${CONFG_FILE}"
     ln -s "${CONFG_FILE}" "${ACONFG_FILE}"
   else
@@ -85,11 +85,12 @@ runGit() {
 
 if [ $# -eq 0 ]; then
   printf "error: missing arguments\n"
-  printf "usage: %s install | <git arguments>\n\n" "$(basename "$0")"
+  printf "usage: %s install [force] | <git arguments>\n\n" "$(basename "$0")"
   exit 1
 elif [ "${1}" = "install" ]; then
   runAsRoot "$@"
-  installScripts
+  shift
+  installScripts "$@"
 else
   case "$(basename "$0")" in
     'confg')
