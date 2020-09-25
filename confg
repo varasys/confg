@@ -1,0 +1,118 @@
+#!/usr/bin/env sh
+# ©, 2020, Casey Witt
+# hosted at https://github.com/kcwitt/confg
+# based on posix scripting tutorials at:
+#   https://www.grymoire.com/Unix/Sh.html
+#   https://steinbaugh.com/posts/posix.html
+#   https://github.com/dylanaraps/pure-sh-bible
+# linted with shellcheck version: 0.7.0 (https://www.shellcheck.net)
+
+set -e # fail fast on errors
+
+runAsRoot() { # restart as root if not already
+  if [ "$(id -u)" -ne 0 ]; then
+    sudo -p 'Restarting as root, password: ' sh "$0" "$@"
+    exit $?
+  fi
+}
+
+setPerms() { # set permissions if they don't already match
+  DIR="${1}"
+  PERMS="${2}"
+  if [ "$(stat --printf=%a "${DIR}")" != "${PERMS}" ]; then
+    printf "updating permissions to %s for \"%s\"\n" "${PERMS}" "${DIR}"
+    chmod "${PERMS}" "${DIR}"
+  fi
+}
+
+installScripts() { # install this script by copying it from wherever it is being run from
+  # and create symlinks for all it's variants
+  ROOT_DIR="${ROOT_DIR:-"/usr/local"}" # convienence variable to change prefix for all paths
+  CONFG_FILE="${CONFG_FILE:-"${ROOT_DIR}/bin/confg"}" # script for user config files
+  SECONFG_FILE="${SECONFG_FILE:-"${ROOT_DIR}/bin/seconfg"}" # script for secure user config files
+  SYCONFG_FILE="${SYCONFG_FILE:-"${ROOT_DIR}/sbin/syconfg"}" # script for system config files
+  ACONFG_FILE="${ACONFG_FILE:-"${ROOT_DIR}/bin/aconfg"}" # script for all user, sucure and system
+
+  if [ ! -f "${CONFG_FILE}" ]; then
+    printf "installing main script to \"%s\"\n" "${CONFG_FILE}"
+    cp -L "$0" "${CONFG_FILE}"
+  else
+    printf "file \"%s\" already exists\n" "${CONFG_FILE}"
+  fi
+  setPerms "${CONFG_FILE}" 755
+
+  if [ ! -e "${SECONFG_FILE}" ]; then
+    printf "installing symlink at \"%s\" to \"%s\"\n" "${SECONFG_FILE}" "${CONFG_FILE}"
+    ln -s "${CONFG_FILE}" "${SECONFG_FILE}"
+  else
+    printf "file \"%s\" already exists\n" "${SECONFG_FILE}"
+  fi
+
+  if [ ! -e "${SYCONFG_FILE}" ]; then
+    printf "installing symlink at \"%s\" to \"%s\"\n" "${SYCONFG_FILE}" "${CONFG_FILE}"
+    ln -s "${CONFG_FILE}" "${SYCONFG_FILE}"
+  else
+    printf "file \"%s\" already exists\n" "${SYCONFG_FILE}"
+  fi
+
+  if [ ! -e "${ACONFG_FILE}" ]; then
+    printf "installing symlink at \"%s\" to \"%s\"\n" "${ACONFG_FILE}" "${CONFG_FILE}"
+    ln -s "${CONFG_FILE}" "${ACONFG_FILE}"
+  else
+    printf "file \"%s\" already exists\n" "${ACONFG_FILE}"
+  fi
+}
+
+makeConfDir() {
+  REPO="${1}"
+  PERMS="${2:-""}"
+  if [ ! -d "${REPO}" ]; then
+    printf "creating git repo at \"%s\"\n" "${REPO}"
+    git init --bare "${REPO}"
+  fi
+  if [ "${PERMS}" ]; then
+    setPerms "${REPO}" "${PERMS}"
+  fi
+}
+
+runGit() {
+  REPO="${1}"; shift
+  DIR="${2}"; shift
+  printf "git repo: %s\n" "${REPO}"
+  printf " workdir: %s\n" "${DIR}"
+  git --git-dir="${REPO}" --work-tree="${DIR}" "$@"
+}
+
+if [ $# -eq 0 ]; then
+  printf "error: missing arguments\n"
+  printf "usage: %s install | <git arguments>\n\n" "$(basename "$0")"
+  exit 1
+elif [ "${1}" = "install" ]; then
+  runAsRoot "$@"
+  installScripts
+else
+  case "$(basename "$0")" in
+    'confg')
+      CONFG_REPO="${CONFG_REPO:-"${HOME}/.confg/user"}"
+      CONFG_DIR="${CONFG_DIR:-"${HOME}"}"
+      makeConfDir "${CONFG_REPO}"
+      runGit "${CONFG_REPO}" "${CONFG_DIR}" "$@"
+      ;;
+    'seconfg')
+      SECONFG_REPO="${SECONFG_REPO:-"${HOME}/.confg/secure"}"
+      SECONFG_DIR="${SECONFG_DIR:-"${HOME}"}"
+      makeConfDir "${SECONFG_REPO}" "700"
+      runGit "${SECONFG_REPO}" "${SECONFG_DIR}" "$@"
+      ;;
+    'syconfg')
+      runAsRoot "$@"
+      SYCONFG_REPO="${SYCONFG_REPO:-"/etc/confg"}"
+      SYCONFG_DIR="${SYCONFG_DIR:-"/"}"
+      makeConfDir "${SYCONFG_REPO}"
+      runGit "${SYCONFG_REPO}" "${SYCONFG_DIR}" "$@"
+      ;;
+    'aconfg')
+      printf "not implemented yet\n"
+      ;;
+  esac
+fi
