@@ -63,57 +63,59 @@ installScripts() { # install this script by copying it from wherever it is being
   fi
 }
 
-makeConfDir() {
-  REPO="${1}"
-  PERMS="${2:-""}"
-  if [ ! -d "${REPO}" ]; then
-    printf "creating git repo at \"%s\"\n" "${REPO}"
-    git init --bare "${REPO}"
-  fi
-  if [ "${PERMS}" ]; then
-    setPerms "${REPO}" "${PERMS}"
-  fi
-}
-
 runGit() {
-  REPO="${1}"; shift
-  DIR="${2}"; shift
-  printf "git repo: %s\n" "${REPO}"
-  printf " workdir: %s\n" "${DIR}"
-  git --git-dir="${REPO}" --work-tree="${DIR}" "$@"
+  if [ -n "${SUDO_USER}" ]; then # running in sudo environment
+    export GIT_SSH_COMMAND="sudo -u ${SUDO_USER} -- ssh" # run ssh as the real user
+  fi
+  git "$@"
 }
 
 if [ $# -eq 0 ]; then
   printf "error: missing arguments\n"
-  printf "usage: %s install [force] | <git arguments>\n\n" "$(basename "$0")"
+  printf "usage: %s install [force] | sync | <git arguments>\n\n" "$(basename "$0")"
   exit 1
 elif [ "${1}" = "install" ]; then
-  runAsRoot "$@"
+  runAsRoot "$@" # restart as root preserving all arguments
+  shift # drop the first argument (ie. "install")
+  installScripts "$@" # install scripts passing along remaining args (ie. optional "force")
+elif [ "$1" = "sync" ]; then
   shift
-  installScripts "$@"
+  "$0" add -u
+  "$0" commit "$@"
+  "$0" push -u origin
 else
-  case "$(basename "$0")" in
+  CMD="$(basename "$0")"
+  case "${CMD}" in
     'confg')
-      CONFG_REPO="${CONFG_REPO:-"${HOME}/.confg/user"}"
-      CONFG_DIR="${CONFG_DIR:-"${HOME}"}"
-      makeConfDir "${CONFG_REPO}"
-      runGit "${CONFG_REPO}" "${CONFG_DIR}" "$@"
+      REPO="${CONFG_REPO:-"${HOME}/.confg/user"}"
+      DIR="${CONFG_DIR:-"${HOME}"}"
       ;;
     'seconfg')
-      SECONFG_REPO="${SECONFG_REPO:-"${HOME}/.confg/secure"}"
-      SECONFG_DIR="${SECONFG_DIR:-"${HOME}"}"
-      makeConfDir "${SECONFG_REPO}" "700"
-      runGit "${SECONFG_REPO}" "${SECONFG_DIR}" "$@"
+      REPO="${SECONFG_REPO:-"${HOME}/.confg/secure"}"
+      DIR="${SECONFG_DIR:-"${HOME}"}"
       ;;
     'syconfg')
       runAsRoot "$@"
-      SYCONFG_REPO="${SYCONFG_REPO:-"/etc/confg"}"
-      SYCONFG_DIR="${SYCONFG_DIR:-"/"}"
-      makeConfDir "${SYCONFG_REPO}"
-      runGit "${SYCONFG_REPO}" "${SYCONFG_DIR}" "$@"
+      REPO="${SYCONFG_REPO:-"/etc/confg"}"
+      DIR="${SYCONFG_DIR:-"/"}"
       ;;
     'aconfg')
-      printf "not implemented yet\n"
+      printf "running \"confg\"\n"
+      confg "$@"
+      printf "running \"seconfg\"\n"
+      seconfg "$@"
+      printf "running \"syconfg\"\n"
+      syconfg "$@"
       ;;
   esac
+
+  if [ "$1" = "clone" ]; then
+    printf "using git repo: \"%s\"\n\n" "${REPO}"
+    runGit clone --bare "$2" "${REPO}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" config --local status.showUntrackedFiles no
+  else
+    printf "using git repo: \"%s\"\n" "${REPO}"
+    printf " using workdir: \"%s\"\n\n" "${DIR}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" "$@"
+  fi
 fi
