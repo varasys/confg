@@ -149,8 +149,8 @@ else
     printf "using git repo: \"%s\"\n\n" "${REPO}"
     runGit clone --bare "$@" "${REPO}"
     runGit --git-dir="${REPO}" --work-tree="${DIR}" config --local status.showUntrackedFiles no
-    runGit restore --staged "${DIR}"
-    runGit restore "${DIR}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" restore --staged "${DIR}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" restore "${DIR}"
     if [ "${CMD}" = "seconfg" ]; then
       printf "changing permissions to 600 for \"%s\"\n" "${REPO}"
       chmod 700 "${REPO}"
