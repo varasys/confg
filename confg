@@ -150,7 +150,7 @@ else
     runGit clone --bare "$@" "${REPO}"
     runGit --git-dir="${REPO}" --work-tree="${DIR}" config --local status.showUntrackedFiles no
     if [ "${CMD}" = "seconfg" ]; then
-      printf "changing permissions to 600 for \"%s\"" "${REPO}"
+      printf "changing permissions to 600 for \"%s\"\n" "${REPO}"
       chmod 700 "${REPO}"
     fi
   elif [ "$1" = "ls" ]; then
