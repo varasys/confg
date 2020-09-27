@@ -105,8 +105,7 @@ EOF
     MACHINE_NAME=${1:-${NAME}-${VERSION_ID}}
     MACHINE_DIR="${MACHINE_DIR:="${MACHINES_DIR}/${MACHINE_NAME}"}"
     USER="${1:-"user"}"
-    machinectl list "${MACHINE_NAME}" > /dev/null 2>&1 || machinectl start "${MACHINE_NAME}"
-    machinectl shell --uid "${USER}" "${MACHINE_NAME}"
+    systemd-nspawn -b -M "${MACHINE_NAME}" --private-users=0 --private-users-chown
   fi
   exit 0
 elif [ "$1" = "install" ]; then
@@ -146,8 +145,9 @@ else
   esac
 
   if [ "$1" = "clone" ]; then
+    shift
     printf "using git repo: \"%s\"\n\n" "${REPO}"
-    runGit clone --bare "$2" "${REPO}"
+    runGit clone --bare "$@" "${REPO}"
     runGit --git-dir="${REPO}" --work-tree="${DIR}" config --local status.showUntrackedFiles no
     if [ "${CMD}" = "seconfg" ]; then
       printf "changing permissions to 600 for \"%s\"" "${REPO}"
