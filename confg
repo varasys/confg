@@ -118,6 +118,11 @@ else
       printf "changing permissions to 600 for \"%s\"" "${REPO}"
       chmod 700 "${REPO}"
     fi
+  elif [ "$1" = "ls" ]; then
+    shift
+    printf "using git repo: \"%s\"\n" "${REPO}"
+    printf " using workdir: \"%s\"\n\n" "${DIR}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" ls-tree -r --name-only "$@" HEAD
   else
     printf "using git repo: \"%s\"\n" "${REPO}"
     printf " using workdir: \"%s\"\n\n" "${DIR}"
