@@ -153,8 +153,7 @@ else
       printf "changing permissions to 600 for \"%s\"\n" "${REPO}"
       chmod 700 "${REPO}"
     fi
-    printf "run the following command to restore files:\n"
-    printf "%s checkout -f <branch>" "${CMD}"
+    runGit --git-dir="${REPO}" --work-tree="${DIR}" checkout -f
   elif [ "$1" = "ls" ]; then
     shift
     printf "using git repo: \"%s\"\n" "${REPO}"
