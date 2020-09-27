@@ -88,6 +88,7 @@ elif [ "$1" = "container" ]; then
     USER="${1:-"user"}"
     mkdir -p "${MACHINE_DIR}"
     dnf install --assumeyes --releasever "${VERSION_ID}" --installroot "${MACHINE_DIR}" \
+      dnf \
       sudo \
       bash \
       bash-completion \
