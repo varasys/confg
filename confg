@@ -74,7 +74,41 @@ if [ $# -eq 0 ]; then
   printf "error: missing arguments\n"
   printf "usage: %s install [force] | sync | <git arguments>\n\n" "$(basename "$0")"
   exit 1
-elif [ "${1}" = "install" ]; then
+elif [ "$1" = "container" ]; then
+  runAsRoot "$@"
+  shift
+  source "/etc/os-release"
+  NAME="${NAME:="fedora"}"
+  VERSION_ID="${VERSION_ID:=32}"
+  MACHINES_DIR="/var/lib/machines/"
+  if [ "${1:-""}" = "init" ]; then
+    shift
+    MACHINE_NAME=${1:-${NAME}-${VERSION_ID}}
+    MACHINE_DIR="${MACHINE_DIR:="${MACHINES_DIR}/${MACHINE_NAME}"}"
+    USER="${1:-"user"}"
+    mkdir -p "${MACHINE_DIR}"
+    dnf install --assumeyes --releasever "${VERSION_ID}" --installroot "${MACHINE_DIR}" \
+      sudo \
+      bash \
+      bash-completion \
+      systemd \
+      passwd \
+      git
+    systemd-nspawn -P -M "${MACHINE_NAME}" /usr/bin/sh <<EOF
+      printf "setting up user account for: \"${USER}\"\n" "${USER}"
+      useradd "${USER}"
+      usermod -aG wheel "${USER}"
+      passwd -d "${USER}"
+EOF
+  else
+    MACHINE_NAME=${1:-${NAME}-${VERSION_ID}}
+    MACHINE_DIR="${MACHINE_DIR:="${MACHINES_DIR}/${MACHINE_NAME}"}"
+    USER="${1:-"user"}"
+    machinectl list "${MACHINE_NAME}" > /dev/null 2>&1 || machinectl start "${MACHINE_NAME}"
+    machinectl shell --uid "${USER}" "${MACHINE_NAME}"
+  fi
+  exit 0
+elif [ "$1" = "install" ]; then
   runAsRoot "$@" # restart as root preserving all arguments
   shift # drop the first argument (ie. "install")
   installScripts "$@" # install scripts passing along remaining args (ie. optional "force")

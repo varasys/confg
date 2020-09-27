@@ -136,3 +136,15 @@ To accomplish this:
 ## What about different configs for different operating systems or user profiles
 
 No problem, just use branches, and checkout the branch than suits whatever computer you are working on. For instance one branch for fedora and another branch for ubunto.
+
+## Test Container (on fedora)
+
+On a fedora system, you can create a mimimal fedora install in the "var/lib/machines" folder which is based on the save version of fedora currently running.
+
+To initialize the new container:
+
+`confg container init`
+
+To enter the new container as user "user":
+
+`confg container [user]`
