@@ -43,21 +43,21 @@ installScripts() { # install this script by copying it from wherever it is being
 
   if [ "$1" = "force" ] || [ ! -e "${SECONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${SECONFG_FILE}" "${CONFG_FILE}"
-    ln -s "${CONFG_FILE}" "${SECONFG_FILE}"
+    ln -fs "${CONFG_FILE}" "${SECONFG_FILE}"
   else
     printf "file \"%s\" already exists\n" "${SECONFG_FILE}"
   fi
 
   if [ "$1" = "force" ] || [ ! -e "${SYCONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${SYCONFG_FILE}" "${CONFG_FILE}"
-    ln -s "${CONFG_FILE}" "${SYCONFG_FILE}"
+    ln -fs "${CONFG_FILE}" "${SYCONFG_FILE}"
   else
     printf "file \"%s\" already exists\n" "${SYCONFG_FILE}"
   fi
 
   if [ "$1" = "force" ] || [ ! -e "${ACONFG_FILE}" ]; then
     printf "installing symlink at \"%s\" to \"%s\"\n" "${ACONFG_FILE}" "${CONFG_FILE}"
-    ln -s "${CONFG_FILE}" "${ACONFG_FILE}"
+    ln -fs "${CONFG_FILE}" "${ACONFG_FILE}"
   else
     printf "file \"%s\" already exists\n" "${ACONFG_FILE}"
   fi
